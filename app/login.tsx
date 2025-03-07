@@ -1,49 +1,85 @@
-import { Text, TextInput, TouchableOpacity, View, Image, StyleSheet } from "react-native";
+import { Text, TextInput, TouchableOpacity, View, Image, StyleSheet, useWindowDimensions, Platform } from "react-native";
 import colors from "./constants/colors";
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing, FadeIn, FadeInUp, BounceInUp, FadeInDown } from "react-native-reanimated";
+import React, { useEffect, useState } from "react";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 export default function LoginScreen() {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const { height } = useWindowDimensions();
+
+  const formHeight = useSharedValue(height * 0.5);
+  const formPadding = useSharedValue(35);
+  const borderRadius = useSharedValue(75);
+
+  const iconStyle = useAnimatedStyle(() => ({
+    borderBottomLeftRadius: borderRadius.value,
+    borderBottomRightRadius: borderRadius.value,
+  }));
+
+  const formStyle = useAnimatedStyle(() => ({
+    height: formHeight.value,
+    paddingTop: formPadding.value,
+    paddingBottom: formPadding.value,
+  }));
+
+  const handleLogin = () => {
+    formHeight.value = withTiming(0, { duration: 1000, easing: Easing.out(Easing.exp) });
+    formPadding.value = withTiming(0, { duration: 1000, easing: Easing.out(Easing.exp) });
+    borderRadius.value = withTiming(0, { duration: 1000, easing: Easing.out(Easing.exp) });
+  };
+
   return (
-    <View style={styles.container}>
+    <KeyboardAwareScrollView
+      contentContainerStyle={styles.container}>
 
-      <View style={styles.iconContainer}>
+      <Animated.View entering={FadeInUp.delay(300).duration(300)} style={[styles.iconContainer, iconStyle]}>
         <Image source={require('../assets/images/TsuIcon.png')} style={styles.icon} />
-
         <Text style={styles.iconText}>Tsu.InPass</Text>
-      </View>
+      </Animated.View>
 
-      <View style={styles.formContainer}>
-        <Text style={styles.welcomeText}>Добро пожаловать!</Text>
+      <Animated.View style={[styles.formContainer, formStyle]}>
+        <Animated.View entering={FadeInUp.delay(100).springify()}>
+          <Text style={styles.welcomeText}>Добро пожаловать!</Text>
+        </Animated.View>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Логин"
-          placeholderTextColor={'#8F9098'}
-          //value={email}
-          //onChangeText={setEmail}
-          keyboardType="email-address"
-        />
+        <Animated.View entering={FadeInUp.delay(100).springify()} style={{ width: "100%" }}>
+          <TextInput
+            style={styles.input}
+            placeholder="Логин"
+            placeholderTextColor={'#8F9098'}
+            //value={email}
+            //onChangeText={setEmail}
+            keyboardType="email-address"
+          />
+        </Animated.View>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Пароль"
-          placeholderTextColor={'#8F9098'}
-          //value={password}
-          //onChangeText={setPassword}
-          secureTextEntry
-        />
+        <Animated.View entering={FadeInUp.delay(200).springify()} style={{ width: "100%" }}>
+          <TextInput
+            style={styles.input}
+            placeholder="Пароль"
+            placeholderTextColor={'#8F9098'}
+            //value={password}
+            //onChangeText={setPassword}
+            secureTextEntry
+          />
+        </Animated.View>
 
-        <TouchableOpacity style={styles.button} /*onPress={handleLogin}*/>
-          <Text style={styles.buttonText}>Войти</Text>
-        </TouchableOpacity>
-      </View>
+        <Animated.View entering={FadeInUp.delay(300).springify()} style={{ width: "100%" }}>
+          <TouchableOpacity style={styles.button} onPress={handleLogin}>
+            <Text style={styles.buttonText}>Войти</Text>
+          </TouchableOpacity>
+        </Animated.View>
 
-    </View>
+      </Animated.View>
+    </KeyboardAwareScrollView >
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#fff',
@@ -54,11 +90,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: colors.primary,
     width: "100%",
-    borderBottomLeftRadius: 75,
-    borderBottomRightRadius: 75,
+    paddingBottom: "20%",
+    paddingTop: "20%",
   },
   formContainer: {
-    flex: 1,
     width: '100%',
     padding: 35,
     alignItems: 'flex-start',
@@ -67,11 +102,12 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     resizeMode: "contain",
-    margin: 20
+    //margin: 20,
+    //marginTop: "20%",
   },
   welcomeText: {
     fontFamily: "Inter_800ExtraBold",
-    fontSize: 20,
+    fontSize: 22,
     marginBottom: 20,
     color: colors.text
   },
@@ -79,20 +115,22 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_700Bold",
     fontSize: 30,
     color: "#fff",
+    letterSpacing: 2,
   },
   input: {
     width: '100%',
-    height: 40,
+    height: 45,
     backgroundColor: '#fff',
     borderRadius: 8,
     paddingHorizontal: 15,
     marginBottom: 15,
     borderWidth: 1,
     borderColor: '#ccc',
+    fontFamily: "Inter_400Regular",
   },
   button: {
     width: '100%',
-    height: 40,
+    height: 45,
     marginTop: 40,
     backgroundColor: colors.primary,
     justifyContent: 'center',
