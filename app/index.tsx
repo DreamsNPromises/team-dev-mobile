@@ -4,7 +4,7 @@ import "react-native-gesture-handler";
 
 export default function Index() {
   return (
-    <Link href="/login" asChild>
+    <Link href="/requests" asChild>
       <Pressable>
         <Text>Home</Text>
       </Pressable>

@@ -1,8 +1,9 @@
 import { Text, TextInput, TouchableOpacity, View, Image, StyleSheet, useWindowDimensions, Platform } from "react-native";
 import colors from "./constants/colors";
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing, FadeIn, FadeInUp, BounceInUp, FadeInDown } from "react-native-reanimated";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import { router } from "expo-router";
 
 export default function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false);
@@ -28,6 +29,8 @@ export default function LoginScreen() {
     formHeight.value = withTiming(0, { duration: 1000, easing: Easing.out(Easing.exp) });
     formPadding.value = withTiming(0, { duration: 1000, easing: Easing.out(Easing.exp) });
     borderRadius.value = withTiming(0, { duration: 1000, easing: Easing.out(Easing.exp) });
+
+    router.push("/requests"); 
   };
 
   return (
@@ -35,7 +38,7 @@ export default function LoginScreen() {
       contentContainerStyle={styles.container}>
 
       <Animated.View entering={FadeInUp.delay(300).duration(300)} style={[styles.iconContainer, iconStyle]}>
-        <Image source={require('../assets/images/TsuIcon.png')} style={styles.icon} />
+        <Image source={require('../assets/images/tsu-icon.png')} style={styles.icon} />
         <Text style={styles.iconText}>Tsu.InPass</Text>
       </Animated.View>
 

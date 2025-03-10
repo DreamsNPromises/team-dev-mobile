@@ -3,9 +3,11 @@ const colors = {
     secondary: "#FFFFFF",
     background: "#f8f9fa",
     text: "#36394C",
-    success: "#28a745",
-    danger: "#dc3545",
-    warning: "#ffc107",
+    textTransparent: "#667085",
+    success: "#7BECAA",
+    danger: "#E6566E",
+    warning: "#E6AA56",
+    
 };
 
 export default colors;  
