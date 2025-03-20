@@ -4,9 +4,15 @@ import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing, FadeIn,
 import React, { useState } from "react";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { router } from "expo-router";
+import api from "./api/axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false);
+  //const [loginForm, setLoginForm] = useState({ email: "", password: "" });
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   const { height } = useWindowDimensions();
 
@@ -25,26 +31,60 @@ export default function LoginScreen() {
     paddingBottom: formPadding.value,
   }));
 
-  const handleLogin = () => {
-    formHeight.value = withTiming(0, { duration: 1000, easing: Easing.out(Easing.exp) });
-    formPadding.value = withTiming(0, { duration: 1000, easing: Easing.out(Easing.exp) });
-    borderRadius.value = withTiming(0, { duration: 1000, easing: Easing.out(Easing.exp) });
+  const handleLogin = async () => {
+    setIsLoading(true);
+    setError(null);
 
-    router.push("/requests"); 
+    try {
+      const response = await api.post('/account/login', {
+        email,
+        password,
+      });
+
+      const { token } = response.data;
+
+      console.log(response.data)
+
+      await AsyncStorage.setItem('token', token);
+
+      formHeight.value = withTiming(0, { duration: 1000, easing: Easing.out(Easing.exp) });
+      formPadding.value = withTiming(0, { duration: 1000, easing: Easing.out(Easing.exp) });
+      borderRadius.value = withTiming(0, { duration: 1000, easing: Easing.out(Easing.exp) });
+
+      setTimeout(() => {
+        router.replace("/requests");
+      }, 1000);
+
+    } catch (error: any) {
+      console.error("Ошибка при логине:", error);
+
+      if (error.response) {
+        // Сервер ответил с ошибкой
+        setError("Неверный email или пароль");
+      } else if (error.request) {
+        // Нет ответа от сервера
+        setError("Нет ответа от сервера. Проверьте подключение");
+      } else {
+        // Ошибка при настройке запроса
+        setError("Произошла ошибка при отправке запроса");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <KeyboardAwareScrollView
       contentContainerStyle={styles.container}>
 
-      <Animated.View entering={FadeInUp.delay(300).duration(300)} style={[styles.iconContainer, iconStyle]}>
+      <Animated.View entering={FadeInUp.delay(300).duration(300)} style={[styles.icon_container, iconStyle]}>
         <Image source={require('../assets/images/tsu-icon.png')} style={styles.icon} />
-        <Text style={styles.iconText}>Tsu.InPass</Text>
+        <Text style={styles.icon_text}>Tsu.InPass</Text>
       </Animated.View>
 
-      <Animated.View style={[styles.formContainer, formStyle]}>
+      <Animated.View style={[styles.form_container, formStyle]}>
         <Animated.View entering={FadeInUp.delay(100).springify()}>
-          <Text style={styles.welcomeText}>Добро пожаловать!</Text>
+          <Text style={styles.welcome_text}>Добро пожаловать!</Text>
         </Animated.View>
 
         <Animated.View entering={FadeInUp.delay(100).springify()} style={{ width: "100%" }}>
@@ -52,8 +92,8 @@ export default function LoginScreen() {
             style={styles.input}
             placeholder="Логин"
             placeholderTextColor={'#8F9098'}
-            //value={email}
-            //onChangeText={setEmail}
+            value={email}
+            onChangeText={setEmail}
             keyboardType="email-address"
           />
         </Animated.View>
@@ -63,16 +103,20 @@ export default function LoginScreen() {
             style={styles.input}
             placeholder="Пароль"
             placeholderTextColor={'#8F9098'}
-            //value={password}
-            //onChangeText={setPassword}
+            value={password}
+            onChangeText={setPassword}
             secureTextEntry
           />
         </Animated.View>
 
         <Animated.View entering={FadeInUp.delay(300).springify()} style={{ width: "100%" }}>
           <TouchableOpacity style={styles.button} onPress={handleLogin}>
-            <Text style={styles.buttonText}>Войти</Text>
+            <Text style={styles.button_text}>Войти</Text>
           </TouchableOpacity>
+
+          {error && (
+            <Text style={styles.error_text}>{error}</Text>
+          )}
         </Animated.View>
 
       </Animated.View>
@@ -87,7 +131,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#fff',
   },
-  iconContainer: {
+  icon_container: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
@@ -96,7 +140,7 @@ const styles = StyleSheet.create({
     paddingBottom: "20%",
     paddingTop: "20%",
   },
-  formContainer: {
+  form_container: {
     width: '100%',
     padding: 35,
     alignItems: 'flex-start',
@@ -108,13 +152,13 @@ const styles = StyleSheet.create({
     //margin: 20,
     //marginTop: "20%",
   },
-  welcomeText: {
+  welcome_text: {
     fontFamily: "Inter_800ExtraBold",
     fontSize: 22,
     marginBottom: 20,
     color: colors.text
   },
-  iconText: {
+  icon_text: {
     fontFamily: "Inter_700Bold",
     fontSize: 30,
     color: "#fff",
@@ -140,9 +184,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 8,
   },
-  buttonText: {
+  button_text: {
     color: '#fff',
     fontFamily: "Inter_600SemiBold",
+    fontSize: 12,
+  },
+  error_text: {
+    color: colors.danger,
+    marginTop: 10,
+    fontFamily: "Inter_500Medium",
     fontSize: 12,
   },
 });

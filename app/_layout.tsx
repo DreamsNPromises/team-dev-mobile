@@ -12,5 +12,5 @@ export default function RootLayout() {
 
   if (!fontsLoaded) return null;
 
-  return <Stack screenOptions={{ headerShown: false }}/>;
+  return <Stack initialRouteName="login" screenOptions={{ headerShown: false }}/>;
 }
