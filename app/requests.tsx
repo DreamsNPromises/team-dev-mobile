@@ -305,11 +305,12 @@ function RequestCard({
                 </View>
             )}
 
-            <View style={styles.card_row}>
-                <TouchableOpacity onPress={() => onEdit(request)} style={[styles.edit_button]}>
-                    <Text style={styles.edit_button_text}> ⋮  Редактировать</Text>
-                </TouchableOpacity>
-            </View>
+            {status !== "Rejected" &&
+                <View style={styles.card_row}>
+                    <TouchableOpacity onPress={() => onEdit(request)} style={[styles.edit_button]}>
+                        <Text style={styles.edit_button_text}> ⋮  Редактировать</Text>
+                    </TouchableOpacity>
+                </View>}
 
         </View>
     );
