@@ -13,6 +13,8 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [fullName, setFullName] = useState("");
+  const [isRegistering, setIsRegistering] = useState(false);
 
   const { height } = useWindowDimensions();
 
@@ -32,6 +34,7 @@ export default function LoginScreen() {
   }));
 
   const handleLogin = async () => {
+    if (!validateForm()) return;
     setIsLoading(true);
     setError(null);
 
@@ -47,9 +50,9 @@ export default function LoginScreen() {
 
       await AsyncStorage.setItem('token', token);
 
-      formHeight.value = withTiming(0, { duration: 1000, easing: Easing.out(Easing.exp) });
-      formPadding.value = withTiming(0, { duration: 1000, easing: Easing.out(Easing.exp) });
-      borderRadius.value = withTiming(0, { duration: 1000, easing: Easing.out(Easing.exp) });
+      // formHeight.value = withTiming(0, { duration: 1000, easing: Easing.out(Easing.exp) });
+      // formPadding.value = withTiming(0, { duration: 1000, easing: Easing.out(Easing.exp) });
+      // borderRadius.value = withTiming(0, { duration: 1000, easing: Easing.out(Easing.exp) });
 
       setTimeout(() => {
         router.replace("/requests");
@@ -71,6 +74,80 @@ export default function LoginScreen() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleRegister = async () => {
+    if (!validateForm()) return;
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await api.post('/account/register', {
+        email,
+        password,
+        fullName,
+      });
+
+      const { token } = response.data;
+      await AsyncStorage.setItem('token', token);
+
+      console.log(response.data)
+
+      setTimeout(() => {
+        router.replace("/requests");
+      }, 1000);
+
+    } catch (error: any) {
+      console.error("Ошибка при регистрации:", error);
+
+      if (error.response) {
+        const serverMessage = error.response.data?.message || "Ошибка регистрации";
+        setError(serverMessage);
+      } else if (error.request) {
+        setError("Нет ответа от сервера. Проверьте подключение");
+      } else {
+        setError("Произошла ошибка при отправке запроса");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const validateForm = () => {
+    let valid = true;
+    let validationError = "";
+  
+    if (!email || email.trim() === "") {
+      validationError = "Email обязателен";
+      valid = false;
+    } else if (!/^\S+@\S+\.\S+$/.test(email)) {
+      validationError = "Некорректный email";
+      valid = false;
+    }
+  
+    if (!password || password.length < 6) {
+      validationError = "Пароль должен быть не менее 6 символов";
+      valid = false;
+    } else if (!/\d/.test(password)) {
+      validationError = "Пароль должен содержать хотя бы одну цифру";
+      valid = false;
+    }
+  
+    if (isRegistering) {
+      if (!fullName || fullName.trim() === "") {
+        validationError = "Полное имя обязательно";
+        valid = false;
+      } else if (fullName.length > 1000) {
+        validationError = "Полное имя не должно превышать 1000 символов";
+        valid = false;
+      }
+    }
+  
+    if (!valid) {
+      setError(validationError);
+    }
+  
+    return valid;
   };
 
   return (
@@ -109,15 +186,37 @@ export default function LoginScreen() {
           />
         </Animated.View>
 
-        <Animated.View entering={FadeInUp.delay(300).springify()} style={{ width: "100%" }}>
-          <TouchableOpacity style={styles.button} onPress={handleLogin}>
-            <Text style={styles.button_text}>Войти</Text>
-          </TouchableOpacity>
+        {isRegistering && (
+          <Animated.View entering={FadeInUp.delay(200).springify()} style={{ width: "100%" }}>
+            <TextInput
+              style={styles.input}
+              placeholder="Полное имя"
+              placeholderTextColor={'#8F9098'}
+              value={fullName}
+              onChangeText={setFullName}
+            />
+          </Animated.View>
+        )}
 
+
+        <Animated.View entering={FadeInUp.delay(300).springify()} style={{ width: "100%" }}>
           {error && (
             <Text style={styles.error_text}>{error}</Text>
           )}
+
+          <TouchableOpacity style={styles.button} onPress={isRegistering ? handleRegister : handleLogin}>
+            <Text style={styles.button_text}>{isRegistering ? 'Зарегистрироваться' : 'Войти'}</Text>
+          </TouchableOpacity>
         </Animated.View>
+
+        <TouchableOpacity
+          style={styles.switch_button}
+          onPress={() => setIsRegistering(!isRegistering)}
+        >
+          <Text style={styles.switch_button_text}>
+            {isRegistering ? 'Есть аккаунт? Войти' : 'Нет аккаунта? Зарегистрироваться'}
+          </Text>
+        </TouchableOpacity>
 
       </Animated.View>
     </KeyboardAwareScrollView >
@@ -132,7 +231,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   icon_container: {
-    flex: 1,
+    flexGrow: 1,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: colors.primary,
@@ -141,9 +240,11 @@ const styles = StyleSheet.create({
     paddingTop: "20%",
   },
   form_container: {
+    flexGrow: 1,
     width: '100%',
     padding: 35,
     alignItems: 'flex-start',
+    marginBottom: 64,
   },
   icon: {
     width: 72,
@@ -191,8 +292,16 @@ const styles = StyleSheet.create({
   },
   error_text: {
     color: colors.danger,
-    marginTop: 10,
     fontFamily: "Inter_500Medium",
+    fontSize: 12,
+  },
+
+  switch_button: {
+    marginTop: 10,
+  },
+  switch_button_text: {
+    color: colors.primary,
+    fontFamily: "Inter_400Regular",
     fontSize: 12,
   },
 });
