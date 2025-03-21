@@ -1,6 +1,6 @@
 import { Text, TextInput, TouchableOpacity, View, Image, StyleSheet, useWindowDimensions, Platform } from "react-native";
 import colors from "./constants/colors";
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing, FadeIn, FadeInUp, BounceInUp, FadeInDown } from "react-native-reanimated";
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing, FadeIn, FadeInUp, BounceInUp, FadeInDown, FadeOutDown, FadeOutUp } from "react-native-reanimated";
 import React, { useState } from "react";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { router } from "expo-router";
@@ -187,7 +187,7 @@ export default function LoginScreen() {
         </Animated.View>
 
         {isRegistering && (
-          <Animated.View entering={FadeInUp.delay(200).springify()} style={{ width: "100%" }}>
+          <Animated.View entering={FadeInUp.delay(200).springify()} exiting={FadeOutUp.springify()} style={{ width: "100%" }}>
             <TextInput
               style={styles.input}
               placeholder="Полное имя"

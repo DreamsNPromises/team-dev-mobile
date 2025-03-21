@@ -3,8 +3,8 @@ import colors from "./constants/colors";
 import React, { useEffect, useState } from "react";
 import { createAbsenceRequest, getAbsenceById, getAbsences, getProfile, updateAbsenceRequest, } from "./api/axios";
 import { Picker } from '@react-native-picker/picker';
-import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import * as DocumentPicker from 'expo-document-picker';
+import { useSignalR } from "./api/useSignalR";
 
 type AbsenceStatus = "Pending" | "Approved" | "Rejected";
 
@@ -39,6 +39,8 @@ export default function RequestsScreen() {
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
     const [loading, setLoading] = useState(false);
+
+    useSignalR('Students', setRequests);
 
     const openCreateModal = () => {
         setEditingRequest(null);
@@ -235,7 +237,7 @@ export default function RequestsScreen() {
                 }
                 onEndReached={handleEndReached}
                 onEndReachedThreshold={0.5}
-                //ListFooterComponent={loading ? <LoadingSpinner /> : null}
+            //ListFooterComponent={loading ? <LoadingSpinner /> : null}
             />
 
             <TouchableOpacity onPress={openCreateModal}>
@@ -261,7 +263,7 @@ function RequestCard({
     request: RequestItem;
     onEdit: (request: RequestItem) => void;
 }) {
-    const { id, status, studentName, type, startDate, endDate, group } = request;
+    const { status, type, startDate, endDate, rejectionReason } = request;
 
     const statusIcons: Record<AbsenceStatus, any> = {
         Approved: require("../assets/images/check-icon.png"),
@@ -290,9 +292,6 @@ function RequestCard({
                         {formatDate(startDate)} - {endDate ? formatDate(endDate) : "не указано"}
                     </Text>
                 </View>
-                {/* <View>
-                    <Image source={require("../assets/images/three-dots-icon.png")} style={styles.text_icon} />
-                </View> */}
             </View>
 
             <View style={styles.card_row}>
@@ -300,16 +299,17 @@ function RequestCard({
                 <Text style={styles.reason}> Причина: {typeMapping[type]}</Text>
             </View>
 
+            {status === "Rejected" && rejectionReason && (
+                <View style={styles.card_row}>
+                    <Text style={styles.rejection_reason_text}>Причина отклонения: {rejectionReason}</Text>
+                </View>
+            )}
+
             <View style={styles.card_row}>
                 <TouchableOpacity onPress={() => onEdit(request)} style={[styles.edit_button]}>
                     <Text style={styles.edit_button_text}> ⋮  Редактировать</Text>
                 </TouchableOpacity>
             </View>
-
-            {/* <View style={styles.card_row}>
-                <Image source={require("../assets/images/tag-icon.png")} style={styles.text_icon} />
-                <Text style={styles.reason}>Документ прикреплён</Text>
-            </View> */}
 
         </View>
     );
@@ -387,7 +387,7 @@ const RequestModal: React.FC<RequestModalProps> = ({ isVisible, onClose, onSubmi
 
         if (newRequest.type === 'Sick') {
             // Sick: document не обязателен, даты не обязательны
-            if (!newRequest.startDate || !newRequest.endDate) {
+            if (!newRequest.startDate) {
                 errorMessage = "Укажите дату начала.";
                 isValid = false;
             }
@@ -492,33 +492,27 @@ const RequestModal: React.FC<RequestModalProps> = ({ isVisible, onClose, onSubmi
                         <Text style={styles.modal_title}>Создать заявку</Text>
 
 
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Дата начала"
-                            value={newRequest.startDate}
-                            //onFocus={showDatepicker}
-                            onChangeText={(text) => handleDateChange(text, 'startDate')}
-                            maxLength={10}
-                            keyboardType="numeric"
-                        />
-                        {/* {show && (
-                            <DateTimePicker
-                                testID="dateTimePicker"
-                                value={date}
-                                mode="date"
-                                is24Hour={true}
-                                display="default"
-                                onChange={onDateChange}
-                            />)} */}
+                        {newRequest.type !== 'Family' && (
+                            <View>
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Дата начала"
+                                    value={newRequest.startDate}
+                                    //onFocus={showDatepicker}
+                                    onChangeText={(text) => handleDateChange(text, 'startDate')}
+                                    maxLength={10}
+                                    keyboardType="numeric"
+                                />
 
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Дата окончания"
-                            value={newRequest.endDate}
-                            onChangeText={(text) => handleDateChange(text, 'endDate')}
-                            maxLength={10}
-                            keyboardType="numeric"
-                        />
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Дата окончания"
+                                    value={newRequest.endDate}
+                                    onChangeText={(text) => handleDateChange(text, 'endDate')}
+                                    maxLength={10}
+                                    keyboardType="numeric"
+                                />
+                            </View>)}
 
                         <Text>Причина</Text>
                         <Picker
@@ -655,6 +649,10 @@ const styles = StyleSheet.create({
         fontFamily: "Inter_500Medium",
         fontSize: 14,
         color: colors.textLight,
+    },
+    rejection_reason_text: {
+        color: colors.danger,
+        fontFamily: "Inter_400Regular",
     },
 
     empty_text: {
