@@ -369,6 +369,7 @@ const RequestModal: React.FC<RequestModalProps> = ({ isVisible, onClose, onSubmi
 
     const handleSubmit = () => {
         const convertToISO = (dateString: string) => {
+            if (!dateString) return null;
             const parts = dateString.split('.');
 
             const [day, month, year] = parts;
